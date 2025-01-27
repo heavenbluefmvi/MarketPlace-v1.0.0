@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chợ Vật Phẩm</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin: 0;
+            font-size: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .item-img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .price-change {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .price-up {
+            color: #2ecc71;
+        }
+
+        .price-down {
+            color: #e74c3c;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .footer {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Chợ Vật Phẩm</h1>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Hình ảnh</th>
+                <th>Tên vật phẩm</th>
+                <th>Giá hiện tại</th>
+                <th>Biến động</th>
+                <th>Số lượng</th>
+            </tr>
+        </thead>
+        <tbody id="itemsTable">
+            <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <div>Tổng tiền nhận: $<span id="totalAmount">0</span></div>
+        <button onclick="sellItems()">Bán vật phẩm</button>
+    </div>
+
+    <script>
+        // Dữ liệu vật phẩm thử nghiệm
+        const items = [
+            { 
+                item: "wood",
+                name: "Gỗ Thông", 
+                image: "https://cdn-icons-png.flaticon.com/512/2346/2346780.png",
+                basePrice: 150,
+                currentPrice: 150,
+                change: 0
+            },
+            { 
+                item: "iron",
+                name: "Sắt Thỏi", 
+                image: "https://cdn-icons-png.flaticon.com/512/326/326909.png",
+                basePrice: 250,
+                currentPrice: 250,
+                change: 0
+            },
+            { 
+                item: "aluminum",
+                name: "Nhôm Nguyên Chất", 
+                image: "https://cdn-icons-png.flaticon.com/512/3050/3050423.png",
+                basePrice: 180,
+                currentPrice: 180,
+                change: 0
+            },
+            { 
+                item: "copper",
+                name: "Đồng Đỏ", 
+                image: "https://cdn-icons-png.flaticon.com/512/2933/2933914.png",
+                basePrice: 200,
+                currentPrice: 200,
+                change: 0
+            }
+        ];
+
+        let selectedItems = {};
+
+        // Hàm cập nhật giá ngẫu nhiên
+        function updatePrices() {
+            items.forEach(item => {
+                const fluctuation = (Math.random() * 0.4 - 0.2).toFixed(2); // ±20%
+                item.change = fluctuation * 100;
+                item.currentPrice = Math.floor(item.basePrice * (1 + Number(fluctuation)));
+            });
+            updateTable();
+        }
+
+        // Hàm cập nhật bảng
+        function updateTable() {
+            const tbody = document.getElementById('itemsTable');
+            tbody.innerHTML = items.map(item => `
+                <tr>
+                    <td><img class="item-img" src="${item.image}" alt="${item.name}"></td>
+                    <td>${item.name}</td>
+                    <td>$${item.currentPrice.toLocaleString()}</td>
+                    <td>
+                        <span class="price-change ${item.change > 0 ? 'price-up' : item.change < 0 ? 'price-down' : ''}">
+                            ${item.change.toFixed(1)}%
+                        </span>
+                    </td>
+                    <td>
+                        <input type="number" 
+                               min="0" 
+                               value="${selectedItems[item.item] || 0}" 
+                               onchange="updateQuantity('${item.item}', this.value)">
+                    </td>
+                </tr>
+            `).join('');
+            
+            calculateTotal();
+        }
+
+        // Hàm cập nhật số lượng
+        function updateQuantity(item, quantity) {
+            selectedItems[item] = Math.max(0, parseInt(quantity) || 0);
+            calculateTotal();
+        }
+
+        // Hàm tính tổng tiền
+        function calculateTotal() {
+            let total = 0;
+            for(const [item, qty] of Object.entries(selectedItems)) {
+                const price = items.find(i => i.item === item)?.currentPrice || 0;
+                total += price * qty;
+            }
+            document.getElementById('totalAmount').textContent = total.toLocaleString();
+        }
+
+        // Hàm bán vật phẩm
+        function sellItems() {
+            const itemsToSell = Object.entries(selectedItems)
+                .filter(([_, qty]) => qty > 0)
+                .map(([item, qty]) => `${qty}x ${item}`)
+                .join(', ');
+            
+            if(itemsToSell.length > 0) {
+                alert(`Đã bán: ${itemsToSell}\nTổng thu: $${document.getElementById('totalAmount').textContent}`);
+                selectedItems = {};
+                updateTable();
+            }
+        }
+
+        // Khởi tạo
+        updatePrices();
+        setInterval(updatePrices, 1000 * 60 * 60); // Cập nhật giá mỗi giờ
+    </script>
+</body>
+</html>
